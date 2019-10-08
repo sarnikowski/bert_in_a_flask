@@ -1,0 +1,8 @@
+bert-tensorflow
+flask
+jupyterlab
+numpy
+pandas
+pathlib
+pyyaml
+scikit-learn
