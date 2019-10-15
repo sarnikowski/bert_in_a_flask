@@ -6,3 +6,4 @@ pandas
 pathlib
 pyyaml
 scikit-learn
+seaborn
