@@ -4,7 +4,7 @@ import yaml
 import json
 
 from flask import Flask, request, g, make_response
-from predict_model_bert import Predict
+from predict import Predict
 from time import time
 
 logging.basicConfig(
