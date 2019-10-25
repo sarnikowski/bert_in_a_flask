@@ -23,9 +23,7 @@ def create_examples(X, y):
     examples = []
     for i, (text, target) in enumerate(zip(X, y)):
         examples.append(
-            run_classifier.InputExample(
-                guid=i, text_a=text, text_b=None, label=str(target)
-            )
+            run_classifier.InputExample(guid=i, text_a=text, text_b=None, label=str(target))
         )
     return examples
 
@@ -45,24 +43,38 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         features.append(feature)
     return features
 
-#TODO Fix this, so the output of the saved model does not need to be converted (happens in predict.py)
-def serving_input_receiver_fn():
-    """ Creates an serving_input_receiver_fn for BERT"""
-    unique_ids = tf.placeholder(tf.int32, [None], name="unique_ids")
-    input_ids = tf.placeholder(tf.int32, [None, 192], name="input_ids")
-    input_mask = tf.placeholder(tf.int32, [None, 192], name="input_mask")
-    segment_ids = tf.placeholder(tf.int32, [None, 192], name="segment_ids")
-    label_ids = tf.placeholder(tf.int32, [None], name="label_ids")
-    input_fn = tf.estimator.export.build_raw_serving_input_receiver_fn(
-        {
-            "unique_ids": unique_ids,
-            "input_ids": input_ids,
-            "input_mask": input_mask,
-            "segment_ids": segment_ids,
-            "label_ids": label_ids,
-        }
-    )()
-    return input_fn
+
+def create_serving_input_receiver_fn(max_seq_length):
+    """ Builds a serving_inputer_receiver_fn
+
+    Arguments
+    ---------
+    max_seq_length: int
+        Specifies the sequence length
+
+    Returns
+    -------
+    serving_input_receiver_fn()
+    """
+
+    def serving_input_receiver_fn():
+        """ Creates an serving_input_receiver_fn for BERT"""
+        unique_ids = tf.placeholder(tf.int32, [None], name="unique_ids")
+        input_ids = tf.placeholder(tf.int32, [None, max_seq_length], name="input_ids")
+        input_mask = tf.placeholder(tf.int32, [None, max_seq_length], name="input_mask")
+        segment_ids = tf.placeholder(tf.int32, [None, max_seq_length], name="segment_ids")
+        label_ids = tf.placeholder(tf.int32, [None], name="label_ids")
+        return tf.estimator.export.build_raw_serving_input_receiver_fn(
+            {
+                "unique_ids": unique_ids,
+                "input_ids": input_ids,
+                "input_mask": input_mask,
+                "segment_ids": segment_ids,
+                "label_ids": label_ids,
+            }
+        )()
+
+    return serving_input_receiver_fn
 
 
 def get_estimator(**kwargs):
@@ -97,9 +109,7 @@ def get_estimator(**kwargs):
         use_one_hot_embeddings=False,
     )
     estimator = tf.estimator.Estimator(
-        model_fn=model_fn,
-        config=run_config,
-        params={"batch_size": kwargs.get("train_batch_size")},
+        model_fn=model_fn, config=run_config, params={"batch_size": kwargs.get("train_batch_size")}
     )
     return estimator
 
@@ -131,12 +141,7 @@ def model_fn_builder(
 
         is_training = mode == tf.estimator.ModeKeys.TRAIN
 
-        (
-            total_loss,
-            per_example_loss,
-            logits,
-            probabilities,
-        ) = run_classifier.create_model(
+        (total_loss, per_example_loss, logits, probabilities) = run_classifier.create_model(
             bert_config,
             is_training,
             input_ids,
@@ -185,20 +190,13 @@ def model_fn_builder(
                 loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
                 return {"eval_accuracy": accuracy, "eval_loss": loss}
 
-            eval_metrics = metric_fn(
-                per_example_loss, label_ids, logits, is_real_example
-            )
+            eval_metrics = metric_fn(per_example_loss, label_ids, logits, is_real_example)
             output_spec = tf.estimator.EstimatorSpec(
-                mode=mode,
-                loss=total_loss,
-                eval_metric_ops=eval_metrics,
-                scaffold=scaffold_fn,
+                mode=mode, loss=total_loss, eval_metric_ops=eval_metrics, scaffold=scaffold_fn
             )
         else:
             output_spec = tf.estimator.EstimatorSpec(
-                mode=mode,
-                predictions={"probabilities": probabilities},
-                scaffold=scaffold_fn,
+                mode=mode, predictions={"probabilities": probabilities}, scaffold=scaffold_fn
             )
         return output_spec
 

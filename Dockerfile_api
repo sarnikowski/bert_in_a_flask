@@ -2,16 +2,11 @@ FROM tensorflow/tensorflow:1.14.0-py3
 
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update && \
-    apt-get install curl -y	
-
-COPY requirements.txt
-
-RUN pip install -q -r requirements.txt
-
 ADD . /app
 
 WORKDIR /app
+
+RUN pip install -q -r requirements.txt
 
 EXPOSE 5000
 

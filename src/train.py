@@ -1,6 +1,7 @@
 import yaml
 import shutil
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 from bert import run_classifier
@@ -12,8 +13,8 @@ from sklearn import preprocessing
 from datetime import datetime
 from pathlib import Path, PurePath
 
-from ai_utils.plotting import plot_confusion_matrix
-from utils_bert import create_examples, get_estimator, serving_input_receiver_fn
+from utils_plotting import plot_confusion_matrix
+from utils_bert import create_examples, get_estimator, create_serving_input_receiver_fn
 from utils_bert import convert_examples_to_features
 from best_checkpoints_exporter import BestCheckpointsExporter
 
@@ -23,7 +24,7 @@ from best_checkpoints_exporter import BestCheckpointsExporter
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
 log_dir = "/app/logs/{}/".format(datetime.now().strftime("%Y%m%dT%H%M%S"))
-Path(log_dir).mkdir()
+Path(log_dir).mkdir(parents=True)
 
 logger = tf.get_logger()
 #################
@@ -31,7 +32,7 @@ logger = tf.get_logger()
 #################
 train_batch_size = 12
 learning_rate = 2e-5
-num_train_epochs = 3.5
+num_train_epochs = 0.2
 max_seq_length = 192
 warmup_proportion = 0.1
 test_size = 0.1
@@ -56,43 +57,39 @@ keep_checkpoint_max = 3
 ################
 # DATA LOADING #
 ################
-# LOAD DATA HERE
-df = None
+df = pd.read_csv("/app/data/stack-overflow-data.csv")
 df_train, df_test = train_test_split(df, test_size=test_size, random_state=random_state)
-df_train, df_eval = train_test_split(
-    df_train, test_size=test_size, random_state=random_state
-)
+df_train, df_eval = train_test_split(df_train, test_size=test_size, random_state=random_state)
 
 label_encoder = preprocessing.LabelEncoder()
-label_encoder.fit(df["TARGET"])
+label_encoder.fit(df["tags"])
 np.save(pretrained_model_dir + "label_encoder.npy", label_encoder.classes_)
 
-y_train = label_encoder.transform(df_train["TARGET"])
-y_eval = label_encoder.transform(df_eval["TARGET"])
-y_test = label_encoder.transform(df_test["TARGET"])
+y_train = label_encoder.transform(df_train["tags"])
+y_eval = label_encoder.transform(df_eval["tags"])
+y_test = label_encoder.transform(df_test["tags"])
 
 num_labels = len(label_encoder.classes_)
 label_list = [str(num) for num in range(num_labels)]
 
-tokenizer = tokenization.FullTokenizer(
-    vocab_file=bert_vocab, do_lower_case=do_lower_case
-)
-# Convert data to bert format
+tokenizer = tokenization.FullTokenizer(vocab_file=bert_vocab, do_lower_case=do_lower_case)
+
 tf.compat.v1.logging.info("***** Converting data to BERT format... *****")
-train_examples = create_examples(df_train["final_text_bert"], y_train)
+
+tf.compat.v1.logging.info("***** Coverting training examples *****")
+train_examples = create_examples(df_train["post"], y_train)
 train_features = convert_examples_to_features(
     train_examples, label_list, max_seq_length, tokenizer
 )
 
-eval_examples = create_examples(df_eval["final_text_bert"], y_eval)
-eval_features = convert_examples_to_features(
-    eval_examples, label_list, max_seq_length, tokenizer
-)
+tf.compat.v1.logging.info("***** Converting evaluation examples *****")
+eval_examples = create_examples(df_eval["post"], y_eval)
+eval_features = convert_examples_to_features(eval_examples, label_list, max_seq_length, tokenizer)
 
-test_examples = create_examples(df_test["final_text_bert"], y_test)
-test_features = convert_examples_to_features(
-    test_examples, label_list, max_seq_length, tokenizer
-)
+tf.compat.v1.logging.info("***** Converting test examples *****")
+test_examples = create_examples(df_test["post"], y_test)
+test_features = convert_examples_to_features(test_examples, label_list, max_seq_length, tokenizer)
+
 tf.compat.v1.logging.info("***** ...Finished converting data to BERT format *****")
 #############
 # INIT BERT #
@@ -121,22 +118,16 @@ estimator = get_estimator(**model_config)
 # TRAINING #
 ############
 train_input_fn = run_classifier.input_fn_builder(
-    features=train_features,
-    seq_length=max_seq_length,
-    is_training=True,
-    drop_remainder=False,
+    features=train_features, seq_length=max_seq_length, is_training=True, drop_remainder=False
 )
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_train_steps)
 
 best_exporter = BestCheckpointsExporter(
-    serving_input_receiver_fn=serving_input_receiver_fn
+    serving_input_receiver_fn=create_serving_input_receiver_fn(max_seq_length)
 )
 
 eval_input_fn = run_classifier.input_fn_builder(
-    features=eval_features,
-    seq_length=max_seq_length,
-    is_training=False,
-    drop_remainder=False,
+    features=eval_features, seq_length=max_seq_length, is_training=False, drop_remainder=False
 )
 
 eval_spec = tf.estimator.EvalSpec(
@@ -160,18 +151,13 @@ tf.compat.v1.logging.info(
 model_config.update({"model_dir": best_checkpoint_dir})
 with open(best_checkpoint_dir + "checkpoint") as file:
     checkpoint = yaml.safe_load(file)
-model_config.update(
-    {"init_checkpoint": best_checkpoint_dir + checkpoint["model_checkpoint_path"]}
-)
+model_config.update({"init_checkpoint": best_checkpoint_dir + checkpoint["model_checkpoint_path"]})
 estimator = get_estimator(**model_config)
 ###################
 # MODEL EVALUATION #
 ####################
 test_input_fn = run_classifier.input_fn_builder(
-    features=test_features,
-    seq_length=max_seq_length,
-    is_training=False,
-    drop_remainder=False,
+    features=test_features, seq_length=max_seq_length, is_training=False, drop_remainder=False
 )
 predictions = estimator.predict(input_fn=test_input_fn)
 
@@ -190,7 +176,6 @@ matrix = plot_confusion_matrix(
     ["{} ({:d})".format(s, c) for s, c in zip(label_encoder.classes_, counts)],
     figsize=(16, 14),
     normalize=True,
-    map=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 10, 12, 13, 14],
     save_path=log_dir + "confusion_matrix.png",
 )
 tf.compat.v1.logging.info(
@@ -199,10 +184,10 @@ tf.compat.v1.logging.info(
 ################
 # EXPORT MODEL #
 ################
-estimator.export_saved_model(trained_model_dir, serving_input_receiver_fn)
-trained_model_dir = [
-    d.as_posix() for d in Path(trained_model_dir).glob("*/") if d.is_dir()
-][0]
+estimator.export_saved_model(
+    trained_model_dir, create_serving_input_receiver_fn(max_seq_length=max_seq_length)
+)
+trained_model_dir = [d.as_posix() for d in Path(trained_model_dir).glob("*/") if d.is_dir()][0]
 model_config.update({"trained_model_dir": trained_model_dir})
 with open(pretrained_model_dir + "model_config.yml", "w") as file:
     yaml.dump(model_config, file)
