@@ -1,9 +1,8 @@
-bert-tensorflow
+bert-for-tf2
 flask
-jupyterlab
 numpy
 pandas
-pathlib
 pyyaml
 scikit-learn
 seaborn
+sentencepiece

@@ -1,11 +1,8 @@
-FROM tensorflow/tensorflow:1.14.0-gpu-py3
+FROM tensorflow/tensorflow:latest-gpu-py3
 
 RUN useradd -ms /bin/bash palpatine
 
 SHELL ["/bin/bash", "-c"]
-
-RUN apt-get update && \
-    apt-get install curl -y	
 
 RUN USER=palpatine && \
     GROUP=palpatine && \

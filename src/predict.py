@@ -1,57 +1,46 @@
-import yaml
+import os
+import json
 import logging
 import numpy as np
 
-from bert import tokenization
-from tensorflow.contrib import predictor
+import bert
 from sklearn.preprocessing import LabelEncoder
-
-from utils_bert import create_examples, convert_examples_to_features
+from utils_bert import convert_data, create_model
 
 logger = logging.getLogger("app.predict")
 
 
 class Predict:
     def __init__(self):
-        with open("/app/models/pretrained/model_config.yml") as file:
-            self.model_config = yaml.safe_load(file)
+        with open("/app/models/latest_model_config.json", "r") as filepath:
+            self.model_config = json.load(filepath)
+        for k, v in self.model_config.items():
+            setattr(self, k, v)
 
+        self.model = create_model(
+            max_seq_len=self.max_seq_len,
+            pretrained_model_dir=self.pretrained_model_dir,
+            n_classes=self.n_classes,
+            load_weights=False,
+        )
+        do_lower_case = "uncased" in self.pretrained_model_dir
+        self.tokenizer = bert.bert_tokenization.FullTokenizer(
+            vocab_file=os.path.join(self.pretrained_model_dir, "vocab.txt"),
+            do_lower_case=do_lower_case,
+        )
+        self.model.load_weights(os.path.join(self.output_model_dir, "model.h5"))
         self.encoder = LabelEncoder()
         self.encoder.classes_ = np.load(
-            "/app/models/pretrained/label_encoder.npy", allow_pickle=True
+            os.path.join(self.output_model_dir, "label_encoder.npy"), allow_pickle=True
         )
-
-        self.label_list = [str(num) for num in range(self.model_config["num_labels"])]
-        self.tokenizer = tokenization.FullTokenizer(
-            vocab_file=self.model_config["vocab_file"],
-            do_lower_case=self.model_config["do_lower_case"],
-        )
-
-        self.predict_fn = predictor.from_saved_model(self.model_config["trained_model_dir"])
 
     def predict(self, data):
         output = {}
-        predictions = []
-        prediction_probs = []
-        X = data["X"]
-        print(X)
-        test_examples = create_examples(X, [0] * len(X))
-        print(test_examples)
-        test_features = convert_examples_to_features(
-            test_examples, self.label_list, self.model_config["max_seq_length"], self.tokenizer
-        )
-        print(test_features)
-        for test_feature in test_features:
-            test_feature = test_feature.__dict__
-            test_feature.pop("is_real_example", "None")
-            test_feature["label_ids"] = test_feature.pop("label_id")
-            test_feature = {key: [value] for key, value in test_feature.items()}
-            # Perform prediction
-            prediction = self.predict_fn(test_feature)
-            predictions.append(
-                self.encoder.inverse_transform([np.argmax(prediction["probabilities"])])[0]
-            )
-            prediction_probs.append(float(np.max(prediction["probabilities"][0])))
-        output["predictions"] = predictions
-        output["prediction_probs"] = prediction_probs
+        input_ids = convert_data(data["x"], self.tokenizer, self.max_seq_len)
+        predictions = self.model.predict(input_ids)
+        probabilities = np.max(predictions, axis=1)
+        output["predictions"] = self.encoder.inverse_transform(
+            np.argmax(predictions, axis=1)
+        ).tolist()
+        output["probabilities"] = probabilities.tolist()
         return output

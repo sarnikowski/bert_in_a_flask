@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 project=$(notdir $(shell pwd))
+BASE_MODEL_PREFIX=multi_cased_L-12_H-768_A-12
 tensorboard_port=6006
 api_port=5000
 gpu=1
@@ -19,6 +20,7 @@ train:
 		-u $(shell id -u):$(shell id -g) -it --rm\
 		--name $(project)_dev \
 		-e PYTHONPATH=/app/src/utils \
+		-e BASE_MODEL_PREFIX=$(BASE_MODEL_PREFIX) \
 		--gpus $(gpu) \
 		-p $(tensorboard_port):6006 \
 		-v $(PWD)/:/app/ \
@@ -33,8 +35,8 @@ start_api:
 		-d $(project)_api:latest
 
 download_base_bert:
-	wget https://storage.googleapis.com/bert_models/2018_11_23/multi_cased_L-12_H-768_A-12.zip -P $(PWD)/models
-	unzip -j -u $(PWD)/models/multi_cased_L-12_H-768_A-12.zip -d $(PWD)/models/pretrained/
+	wget https://storage.googleapis.com/bert_models/2018_11_23/$(BASE_MODEL_PREFIX).zip -P $(PWD)/models
+	unzip -j -u $(PWD)/models/multi_cased_L-12_H-768_A-12.zip -d $(PWD)/models/$(BASE_MODEL_PREFIX)
 	rm $(PWD)/models/multi_cased_L-12_H-768_A-12.zip
 
 download_data:
