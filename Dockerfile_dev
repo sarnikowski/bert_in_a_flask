@@ -4,9 +4,6 @@ RUN useradd -ms /bin/bash palpatine
 
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update && \
-    apt-get install curl -y	
-
 RUN USER=palpatine && \
     GROUP=palpatine && \
     curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.4/fixuid-0.4-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \

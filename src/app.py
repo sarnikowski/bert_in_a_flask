@@ -32,7 +32,7 @@ def handle_request():
 
 @app.route("/health_check", methods=["GET"])
 def health_check():
-    return make_response({"text": "I am alive"})
+    return make_response({"Reponse": "Hello there."})
 
 
 @app.before_request
@@ -57,4 +57,4 @@ def after_request(response):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)

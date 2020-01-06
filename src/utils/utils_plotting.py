@@ -19,7 +19,7 @@ def plot_confusion_matrix(
     xlabel="Predicted label",
     ylabel="True label",
 ):
-    """Prints a confusion matrix, as returned by sklearn.metrics.confusion_matrix, as a heatmap.
+    """Prints a confusion matrix, as returned by sklearn.metrics.confusion_matrix.
 
     Arguments
     ---------
@@ -71,9 +71,7 @@ def plot_confusion_matrix(
     elif np.issubdtype(c_matrix.dtype, np.floating):
         fmt_ = ".2f"
     else:
-        raise ValueError(
-            "Confusion matrix values must be subtype of np.integer or np.floating"
-        )
+        raise ValueError("Confusion matrix values must be subtype of np.integer or np.floating")
 
     fmt = fmt if fmt is not None else fmt_
     heatmap = sns.heatmap(

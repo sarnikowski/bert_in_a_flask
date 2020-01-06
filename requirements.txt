@@ -5,3 +5,4 @@ pandas
 pyyaml
 scikit-learn
 seaborn
+sentencepiece
