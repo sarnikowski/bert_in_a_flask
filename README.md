@@ -1,5 +1,5 @@
 # Bert in a flask
-This repo contains an implementation of [Bert TF 2.0](https://github.com/kpe/bert-for-tf2) multi-class classification, served using a Flask API. The purpose of the project is to demonstrate how to serve BERT predicitions through as simple Flask API.
+This repo contains an implementation of [BERT](https://github.com/google-research/bert) multiclass classification, based on [kpe/bert-for-tf2](https://github.com/kpe/bert-for-tf2) implementation, served using a Flask API. The purpose of the project is to demonstrate how to serve vanilla BERT predicitions through as simple Flask API.
 
 The code is compatible with [Tensorflow 2.0](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf), and [Docker>=19](https://docs.docker.com/). The project uses the [Stackoverflow dataset](https://storage.googleapis.com/tensorflow-workshop-examples/stack-overflow-data.csv).
 ## NEWS
