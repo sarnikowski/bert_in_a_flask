@@ -26,7 +26,9 @@ predict = Predict()
 def handle_request():
     data = request.get_json(force=True)
     output = predict.predict(data)
-    output["model"] = "BERT {} {}".format(version["date"], version["sha"][:8])
+    output["model"] = "{} {} {}".format(
+        predict.model_type.upper(), version["date"], version["sha"][:8]
+    )
     return make_response(output)
 
 

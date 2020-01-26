@@ -21,37 +21,24 @@ def plot_confusion_matrix(
 ):
     """Prints a confusion matrix, as returned by sklearn.metrics.confusion_matrix.
 
-    Arguments
-    ---------
-    y_test: list
-        List of test labels
-    y_pred: list
-        List of predicted labels
-    class_names: list
-       An ordered list of class names, in the order corrsponding to the index of y_test and y_pred.
-    figsize: tuple
-       A 2-long tuple, the first value determining the horizontal size of the ouputted figure,
-       the second determining the vertical size. Defaults to (10,7).
-    fontsize: int
-       Font size for axes labels. Defaults to 14.
-    normalize: boolean
-        Normalize confusion matrix. Default to False
-    save_path: string
-        If provided will save the figure to the path of the string. Defaults to not saving
-    fmt: string
-        format string of numbers in tiles with sensible defaults
-    map: array
-        Used for permutations of order of classes, e.g. [0, 2, 1] will swap class 1 and 2.
-        Length should equal number classes.
-    xlabel: string
-        x label of heatmap
-    ylabel: string
-        y label of heatmap
+    Args:
+        y_test: List. Test labels
+        y_pred: List. Predicted labels
+        class_names: List. An ordered list of class names, in the order corrsponding to the index of y_test and y_pred.
+        figsize: Tuple. A 2-long tuple, the first value determining the horizontal size of the ouputted figure,
+            the second determining the vertical size. Defaults to (10,7).
+        fontsize: Int. Font size for axes labels. Defaults to 14.
+        normalize: Boolean. Normalize confusion matrix. Default to False
+        save_path: String. If provided will save the figure to the path of the string.
+            Defaults to not saving
+        fmt: String. Format string of numbers in tiles with sensible defaults
+        map: Array. Used for permutations of order of classes, e.g. [0, 2, 1] will swap class 1 and 2.
+            Length should equal number classes.
+        xlabel: String. x label of heatmap
+        ylabel: String. y label of heatmap
 
-    Returns
-    -------
-    array, shape = [n_classes, n_classes]
-       The resulting confusion matrix
+    Returns:
+        Array. The resulting confusion matrix with shape = [n_classes, n_classes]
     """
     if map is not None:
         map = np.array(map)
