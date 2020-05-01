@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY requirements.txt /app
 
-RUN pip install -q -r requirements.txt
+RUN pip install -r requirements.txt --no-cache-dir
 
 USER palpatine:palpatine
 

@@ -3,11 +3,11 @@ This repo demonstrates how to serve both vanilla BERT and ALBERT predictions thr
 
 The code is written to be compatible with [Tensorflow 2.0](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf), and [Docker>=19](https://docs.docker.com/). If you want to train with a GPU, you will also need to have `nvidia-container-toolkit` installed. Instructions on how to install this can be found [here](https://github.com/NVIDIA/nvidia-docker). The project uses the [Stackoverflow dataset](https://storage.googleapis.com/tensorflow-workshop-examples/stack-overflow-data.csv) for demonstration purposes.
 ## NEWS
-* **04-02-2020** - Now supports [google-research/ALBERT](https://github.com/google-research/ALBERT). Data and model loading has been simplified and improved.  
+* **04-02-2020** - Now supports [google-research/ALBERT](https://github.com/google-research/ALBERT). Data and model loading has been simplified and improved. 
 * **06-01-2020** - Codebase has been overhauled and ported to [Tensorflow 2.0](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf). The implementation is now based on [kpe/bert-for-tf2](https://github.com/kpe/bert-for-tf2).
 * **25-10-2019** - Bugfixes. Code is now runnable, with a data example. Codebase still under construction, considering upgrading the project to TF 2.0
 ## USAGE
-The most common docker commands used in this project, have been wrapped in `Makefile` targets for convenience. Training and API serving is executed in docker containers. The corresponding Dockerfiles are `Dockerfile_dev` for training/development and `Dockerfile_api` for the API. Building these can be achieved using the following targets.
+The most common docker commands used in this project, have been wrapped in `Makefile` targets for convenience. Training and API serving is executed in docker containers. The corresponding Dockerfiles are `dev.Dockerfile` for training/development and `api.Dockerfile` for the API. Building these can be achieved using the following targets.
 ```Make
 make build_dev
 make build_api

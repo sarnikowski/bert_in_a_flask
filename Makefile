@@ -7,12 +7,12 @@ gpu=1
 .PHONY: build_dev, build_api, train, .build
 
 build_dev:
-	$(MAKE) .build stage=dev tag=latest Dockerfile=Dockerfile_dev
+	$(MAKE) .build stage=dev tag=latest Dockerfile=docker/dev.Dockerfile
 
 build_api:
 	$(shell echo "date: $(shell date +"%Y-%m-%d %T")" > version.yml)
 	$(shell echo "sha: $(shell git rev-parse HEAD)" >> version.yml)
-	$(MAKE) .build stage=api tag=latest Dockerfile=Dockerfile_api
+	$(MAKE) .build stage=api tag=latest Dockerfile=docker/api.Dockerfile
 
 train:
 	@docker run \
