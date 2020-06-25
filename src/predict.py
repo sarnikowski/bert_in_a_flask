@@ -1,14 +1,11 @@
 import os
 import json
-import logging
 import numpy as np
 
 import data_helper
 
 from sklearn.preprocessing import LabelEncoder
 from model import create_model
-
-logger = logging.getLogger("app.predict")
 
 
 class Predict:
@@ -31,9 +28,7 @@ class Predict:
             setattr(self, k, v)
 
         self.encoder = LabelEncoder()
-        self.encoder.classes_ = np.load(
-            os.path.join(self.model_dir, "label_encoder.npy"), allow_pickle=True
-        )
+        self.encoder.classes_ = np.load(os.path.join(self.model_dir, "label_encoder.npy"), allow_pickle=True)
         self.model = create_model(
             model_dir=self.model_dir,
             model_type=self.model_type,
@@ -42,7 +37,7 @@ class Predict:
             load_pretrained_weights=False,
         )
         self.datahelper = data_helper.DataHelper(
-            model_dir=self.model_dir, model_type=self.model_type, max_seq_len=self.max_seq_len
+            model_dir=self.model_dir, model_type=self.model_type, max_seq_len=self.max_seq_len,
         )
         self.model.load_weights(os.path.join(self.model_dir, "model.h5"))
 
@@ -51,8 +46,6 @@ class Predict:
         input_ids = self.datahelper.convert_data(data["x"])
         predictions = self.model.predict(input_ids)
         probabilities = np.max(predictions, axis=1)
-        output["predictions"] = self.encoder.inverse_transform(
-            np.argmax(predictions, axis=1)
-        ).tolist()
+        output["predictions"] = self.encoder.inverse_transform(np.argmax(predictions, axis=1)).tolist()
         output["probabilities"] = probabilities.tolist()
         return output

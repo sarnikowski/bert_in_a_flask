@@ -1,13 +1,15 @@
 import os
+import logging
 import numpy as np
 import pandas as pd
 import bert
 import sentencepiece as spm
 import params_flow as pf
-import custom_logger
 
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
+
+logger = logging.getLogger(__name__)
 
 
 class DataHelper(object):
@@ -65,7 +67,6 @@ class DataHelper(object):
             y_test: List. Encoded labels for test set.
             label_encoder: sklearn.preprocessing.LabelEncoder()
         """
-        logger = custom_logger.get_logger()
         if not os.path.exists("/app/data/stack-overflow-data.csv"):
             logger.info("Downloading stackoverflow data.")
             pf.utils.fetch_url(
@@ -105,8 +106,7 @@ class DataHelper(object):
         cls_id = [self.spm_model.PieceToId("[CLS]")]
         sep_id = [self.spm_model.PieceToId("[SEP]")]
         input_ids = [
-            bert.albert_tokenization.encode_ids(self.spm_model, input_token_example)
-            for input_token_example in x
+            bert.albert_tokenization.encode_ids(self.spm_model, input_token_example) for input_token_example in x
         ]
         input_ids = self._truncate_pad(input_ids, cls_id, sep_id)
         return input_ids
@@ -159,9 +159,7 @@ class DataHelper(object):
         """
         vocab_file = os.path.join(self.model_dir, "vocab.txt")
         do_lower_case = "uncased" in self.model_dir
-        tokenizer = bert.bert_tokenization.FullTokenizer(
-            vocab_file=vocab_file, do_lower_case=do_lower_case
-        )
+        tokenizer = bert.bert_tokenization.FullTokenizer(vocab_file=vocab_file, do_lower_case=do_lower_case)
         return tokenizer, vocab_file
 
     def _load_albert_sentencepiece_model(self):

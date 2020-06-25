@@ -3,9 +3,8 @@ import json
 import glob
 import shutil
 import datetime
+import logging
 import bert
-
-import custom_logger
 
 supported_albert_models = [
     "albert_base_v2",
@@ -24,7 +23,7 @@ supported_bert_models = [
     "wwm_cased_L-24_H-1024_A-16",
 ]
 
-logger = custom_logger.get_logger()
+logger = logging.getLogger(__name__)
 
 
 def validate_model(model_name):
@@ -63,32 +62,24 @@ def fetch_model(model_name):
     model_dir_prefix = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     model_dir = os.path.join("/app/models/trained", "{}_{}".format(model_dir_prefix, model_name))
     os.makedirs(model_dir, exist_ok=True)
+
     if model_type == "albert":
-        try:
-            model_file = glob.glob(
-                os.path.join("/app/models/pretrained", model_name, "*", "model.ckpt-best.meta")
-            )[0]
-            pretrained_model_dir = os.path.dirname(model_file)
-            logger.info("Located model at {}".format(pretrained_model_dir))
-        except (OSError, IndexError):
-            logger.info("Downloading model:[{}]".format(model_name))
-            pretrained_model_dir = bert.fetch_google_albert_model(
-                model_name, "/app/models/pretrained"
-            )
+        model_checkpoint = "model.ckpt-best.meta"
     elif model_type == "bert":
-        try:
-            model_file = glob.glob(
-                os.path.join(
-                    "/app/models/pretrained", model_name, "bert_model.ckpt.data-00000-of-00001"
-                )
-            )[0]
-            pretrained_model_dir = os.path.dirname(model_file)
-            logger.info("Located model at {}".format(pretrained_model_dir))
-        except (OSError, IndexError):
-            logger.info("Downloading model:[{}]".format(model_name))
-            pretrained_model_dir = bert.fetch_google_bert_model(
-                model_name, "/app/models/pretrained"
-            )
+        model_checkpoint = "bert_model.ckpt.data-00000-of-00001"
+
+    model_path = os.path.join("/app/models/pretrained", model_name, "*", model_checkpoint)
+
+    try:
+        model_file = glob.glob(model_path)[0]
+        pretrained_model_dir = os.path.dirname(model_file)
+        logger.info("Located model at {}".format(pretrained_model_dir))
+    except (OSError, IndexError):
+        logger.info("Downloading model:[{}]".format(model_name))
+        if model_type == "albert":
+            pretrained_model_dir = bert.fetch_google_albert_model(model_name, "/app/models/pretrained")
+        elif model_type == "bert":
+            pretrained_model_dir = bert.fetch_google_bert_model(model_name, "/app/models/pretrained")
 
     return pretrained_model_dir, model_dir, model_type
 
@@ -109,26 +100,21 @@ def export_model_config(model_config, pretrained_model_dir, datahelper):
             model_config["model_type"].upper(), model_config["model_dir"]
         )
     )
+    config_name = f"{model_config['model_type']}_config.json"
     if model_config["model_type"] == "albert":
-        shutil.copyfile(
-            datahelper.spm_file,
-            os.path.join(model_config["model_dir"], os.path.basename(datahelper.spm_file)),
-        )
-        shutil.copyfile(
-            os.path.join(pretrained_model_dir, "albert_config.json"),
-            os.path.join(model_config["model_dir"], "albert_config.json"),
-        )
+        vocab_file = datahelper.spm_file
     elif model_config["model_type"] == "bert":
-        shutil.copyfile(
-            datahelper.vocab_file,
-            os.path.join(model_config["model_dir"], os.path.basename(datahelper.vocab_file)),
-        )
-        shutil.copyfile(
-            os.path.join(pretrained_model_dir, "bert_config.json"),
-            os.path.join(model_config["model_dir"], "bert_config.json"),
-        )
+        vocab_file = datahelper.vocab_file
+
+    shutil.copyfile(
+        vocab_file, os.path.join(model_config["model_dir"], os.path.basename(vocab_file)),
+    )
+    shutil.copyfile(
+        os.path.join(pretrained_model_dir, config_name), os.path.join(model_config["model_dir"], config_name),
+    )
     logger.info("Saving trained model configuration to {}".format(model_config["model_dir"]))
-    with open(os.path.join(model_config["model_dir"], "model_config.json"), "w") as filepath:
+
+    with open(os.path.join(model_config["model_dir"], "config.json"), "w") as filepath:
         json.dump(model_config, filepath)
     with open("/app/models/latest_model_config.json", "w") as filepath:
         json.dump(model_config, filepath)

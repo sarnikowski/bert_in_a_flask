@@ -61,16 +61,10 @@ def plot_confusion_matrix(
         raise ValueError("Confusion matrix values must be subtype of np.integer or np.floating")
 
     fmt = fmt if fmt is not None else fmt_
-    heatmap = sns.heatmap(
-        df_cm, annot=True, fmt=fmt, cmap="Blues", cbar=False, annot_kws={"size": 12}
-    )
+    heatmap = sns.heatmap(df_cm, annot=True, fmt=fmt, cmap="Blues", cbar=False, annot_kws={"size": 12})
 
-    heatmap.yaxis.set_ticklabels(
-        heatmap.yaxis.get_ticklabels(), rotation=0, ha="right", fontsize=fontsize
-    )
-    heatmap.xaxis.set_ticklabels(
-        heatmap.xaxis.get_ticklabels(), rotation=45, ha="right", fontsize=fontsize
-    )
+    heatmap.yaxis.set_ticklabels(heatmap.yaxis.get_ticklabels(), rotation=0, ha="right", fontsize=fontsize)
+    heatmap.xaxis.set_ticklabels(heatmap.xaxis.get_ticklabels(), rotation=45, ha="right", fontsize=fontsize)
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     plt.tight_layout()

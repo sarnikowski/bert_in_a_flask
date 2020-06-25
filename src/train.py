@@ -1,7 +1,8 @@
 import os
+import sys
+import logging
 import numpy as np
 
-import custom_logger
 import loader
 import data_helper
 import optimization
@@ -12,7 +13,14 @@ from tensorflow import keras
 
 from model import create_model
 
-logger = custom_logger.get_logger()
+logging.basicConfig(
+    format="[%(asctime)s] %(levelname)-8s in %(name)s: %(message)s",
+    level=logging.INFO,
+    stream=sys.stdout,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+logger = logging.getLogger(__name__)
 
 batch_size = 12
 max_learn_rate = 3e-5
@@ -24,12 +32,10 @@ test_size = 0.1
 validation_split = 0.1
 random_state = None
 
-model_name = "albert_large_v2"
+model_name = "uncased_L-12_H-768_A-12"
 pretrained_model_dir, model_dir, model_type = loader.fetch_model(model_name)
 
-datahelper = data_helper.DataHelper(
-    model_dir=pretrained_model_dir, model_type=model_type, max_seq_len=max_seq_len
-)
+datahelper = data_helper.DataHelper(model_dir=pretrained_model_dir, model_type=model_type, max_seq_len=max_seq_len)
 
 x_train, x_test, y_train, y_test, label_encoder = datahelper.get_stackoverflow_data(
     model_dir=model_dir, test_size=test_size, random_state=random_state
@@ -37,11 +43,7 @@ x_train, x_test, y_train, y_test, label_encoder = datahelper.get_stackoverflow_d
 n_classes = len(label_encoder.classes_)
 
 model = create_model(
-    model_dir=pretrained_model_dir,
-    model_type=model_type,
-    max_seq_len=max_seq_len,
-    n_classes=n_classes,
-    summary=True,
+    model_dir=pretrained_model_dir, model_type=model_type, max_seq_len=max_seq_len, n_classes=n_classes, summary=True,
 )
 tensorboard_callback = keras.callbacks.TensorBoard(log_dir=model_dir)
 
@@ -91,7 +93,11 @@ matrix = plotting.plot_confusion_matrix(
     normalize=True,
     save_path=os.path.join(model_dir, "confusion_matrix.png"),
 )
-model_config = {"model_dir": model_dir, "model_type": model_type, "max_seq_len": max_seq_len}
+model_config = {
+    "model_dir": model_dir,
+    "model_type": model_type,
+    "max_seq_len": max_seq_len,
+}
 loader.export_model_config(
-    model_config=model_config, pretrained_model_dir=pretrained_model_dir, datahelper=datahelper
+    model_config=model_config, pretrained_model_dir=pretrained_model_dir, datahelper=datahelper,
 )
